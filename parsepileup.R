@@ -41,37 +41,29 @@ get_bp_info <- function(data){
   return(bp_info)
 }
 
+#number of bps to be removed from the front to of the read
+front_trim <- 600
+
+#number of bps to be removed from the end to of the read
+back_trim <- 600
+
+
 #generate the sequence
-create_svg_string <- function(bp_info){
+create_svg_string <- function(bp_info,front_trim,back_trim,variance,y_count){
+  variance_string <- ''
+  if(variance){
+    variance_string <- ' variance '
+  }
   x_count <- 10
-  output <- '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>title</title>\n</head>\n
-  <body>
-  <style>
-  .svg_item{
-    width: 100%;
-  }
-  .hover_me:hover{
-  fill: green;
-  }
-.variance .variance_none{
-  fill: black;
-}
-.variance .variance_01{
-  fill: grey;
-}
-.variance .variance_10{
-  fill: #E6E6E6;
-}
-.variance .variance_high{
-  fill: #FFF;
-}
-  </style><svg class="svg_item">'
+  output <- paste('
+  <svg class="svg_item ', variance_string ,'">',sep='') #this is inside a paste function so I can define the width of the svg
+
   for( i in seq(1,nrow(bp_info))){
     #get the most common bp
     index <- which.max(bp_info[i,])
-    color <- c('blue','red','green','yellow')
+    color <- c('A','C','G','T')
     variance <- 1 - (max(bp_info[i,]) / sum(bp_info[i,]))
-    extra_class <- ''
+    extra_class <- color[index]
     
     if(variance == 0){
       extra_class <- paste(extra_class, 'variance_none')
@@ -84,19 +76,68 @@ create_svg_string <- function(bp_info){
       extra_class <- paste(extra_class, 'variance_high')
     }
     
-    line <- paste('<rect class="hover_me ', extra_class ,' " x="', x_count ,'" y="10" width="10" height="20" stroke="black" fill= "', color[index], '"/>\n')
+    line <- paste('<rect class="base ', extra_class ,' " x="', x_count ,'" y="', y_count ,'" width="10" height="20" stroke="black"/>\n')
     output <- paste(output, line)
     x_count <- x_count + 10
   }  
-  output <- paste(output, '</svg>\n</body>\n</html>')
+
+  output <- paste(output, '</svg>')
   return(output)
 }
 
-string <- get_bp_info(data)
-svg_item <- create_svg_string(string)
+#bp_rows is the number of rows in the bp_info matrix
+get_style_string <- function(bp_rows){
+style <- paste('  <style>
+    .A{
+      fill: blue;
+    }
+  .C{
+    fill: red;
+  }
+  .G{
+    fill:green;
+  }
+  .T{
+    fill:yellow;
+  }
+  base:hover{
+    fill: green;
+  }
+  .variance .variance_none{
+    fill: black;
+  }
+  .variance .variance_01{
+    fill: grey;
+  }
+  .variance .variance_10{
+    fill: #E6E6E6;
+  }
+  .variance .variance_high{
+    fill: #FFF;
+  }
+  .svg_item {
+    width:',(bp_rows * 10),'px;
+    height: 30px;
+  }
+  </style>',sep='')
+  return(style)
+}
+
+htlm_wrap <- function(string){
+  paste('<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>title</title>\n</head>\n<body>',string,'</body>\n</html>')
+}
+
+data_small <- data[front_trim:(nrow(data) - back_trim),]
+bp_data <- get_bp_info(data_small)
+
+style <- get_style_string(nrow(bp_data))
+svg_item <- create_svg_string(bp_data,front_trim,back_trim,TRUE,10)
+svg_item2 <- create_svg_string(bp_data,front_trim,back_trim,FALSE,10)
+final_string <- paste(style,svg_item,svg_item2)
+html <- htlm_wrap(final_string)
 
 fileConn<-file("output.html")
-writeLines(svg_item, fileConn)
+writeLines(html, fileConn)
 close(fileConn)
 
 
