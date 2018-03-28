@@ -1,0 +1,5 @@
+estimated copy number: 27.7405503057
+average coverage: 388.36770428
+***threshold for variance: 0.0714285714286
+916 (4/389.0): 0.0102827763496
+952 (4/392.0): 0.0102040816327

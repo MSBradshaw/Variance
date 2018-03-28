@@ -2,7 +2,7 @@ library(tibble)
 library(readr)
 library(dplyr)
 library(plotrix)
-#biocLite('Rsamtools') 
+library(stringr)
 
 #Thymine	6	YELLOW
 #Adenine	6	BLUE
@@ -13,6 +13,10 @@ library(plotrix)
 
 setwd('C:/Users/Michael/Documents/Variance')
 data <- read_tsv('8802/pileup.pileup',col_names = FALSE)
+data2 <- read_tsv('final_dirs/8805/pileup.pileup',col_names = FALSE)
+data3 <- read_tsv('final_dirs/8800/pileup.pileup',col_names = FALSE)
+data4 <- read_tsv('final_dirs/8810/pileup.pileup',col_names = FALSE)
+
 colnames(data) <- c('name','position','bp','depth','info','quality')
 
 #return a matrix of the bp
@@ -47,8 +51,45 @@ front_trim <- 600
 #number of bps to be removed from the end to of the read
 back_trim <- 600
 
+#generate the sequence string with bp coloring or variance coloring
+create_conscensus_svg_string <- function(bp_info,conscensus,variance){
+  extra_class <- ''
+  variance_string <- ''
+  if(variance){
+    extra_class <- ' variance '
+  }
+  x_count <- 10
+  cons_vec <- strsplit(conscensus,'')
 
-#generate the sequence
+  output <- paste('
+  <svg class="svg_item ', extra_class ,'">',sep='') 
+  
+  for( i in seq(1,nrow(bp_info))){
+    class <- 'match'
+    if(!bp_info[i,1] %in% cons_vec[i]){
+      class <- bp_info[i,1]
+    }
+    
+    variance <- 1 - (max(bp_info[i,]) / sum(bp_info[i,]))
+    
+    if(variance == 0){
+      class <- paste(class, 'variance_none')
+    }else if(variance < .01){
+      #illumina error rate
+      class <- paste(class, 'variance_01')
+    }else if(variance < .10){
+      class <- paste(class, 'variance_10')
+    }else{
+      class <- paste(class, 'variance_high')
+    }
+    
+    line <- paste('<rect class="base ', class ,' " x="', x_count ,'" y="10" width="10" height="20" stroke="black"/>\n')
+    output <- paste(output, line)
+    x_count <- x_count + 10
+  }
+}  
+
+#generate the sequence string with bp coloring or variance coloring
 create_svg_string <- function(bp_info,front_trim,back_trim,variance,y_count){
   variance_string <- ''
   if(variance){
@@ -85,6 +126,7 @@ create_svg_string <- function(bp_info,front_trim,back_trim,variance,y_count){
   return(output)
 }
 
+#creates the style tag
 #bp_rows is the number of rows in the bp_info matrix
 get_style_string <- function(bp_rows){
 style <- paste('  <style>
@@ -115,6 +157,9 @@ style <- paste('  <style>
   .variance .variance_high{
     fill: #FFF;
   }
+  .match{
+  fill: #E6E6E6;
+  }
   .svg_item {
     width:',(bp_rows * 10),'px;
     height: 30px;
@@ -123,10 +168,24 @@ style <- paste('  <style>
   return(style)
 }
 
+#wrap a given string in an html skeleton so it can be viewed in the browser
 htlm_wrap <- function(string){
   paste('<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>title</title>\n</head>\n<body>',string,'</body>\n</html>')
 }
 
+#given a vector or strings, get the consesous sequence
+get_consensus <- function(strings){
+  seq <- ''
+  range <- seq(1,length(strings))
+  first_string <- strsplit(strings[1],'')[[1]]
+  for( i in seq(1:length(first_string))){
+    bps <- str_sub(strings,i,i)
+    seq <- paste(seq,names(sort(table(bps),decreasing = TRUE))[1],sep='')
+  }
+  return(seq)
+}
+
+#trim the data
 data_small <- data[front_trim:(nrow(data) - back_trim),]
 bp_data <- get_bp_info(data_small)
 

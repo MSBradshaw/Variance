@@ -1,0 +1,4 @@
+estimated copy number: 0.447470817121
+average coverage: 4.47470817121
+***threshold for variance: 0.1
+***680 (1/3.0): 0.333333333333
