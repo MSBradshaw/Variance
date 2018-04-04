@@ -101,17 +101,17 @@ create_conscensus_svg_string <- function(bp_info,conscensus,variance){
 }  
 
 #generate the sequence string with bp coloring or variance coloring
-create_svg_string <- function(bp_info,front_trim,back_trim,variance,y_count,bright){
-  variance_string <- ''
+create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE){
+  display_type <- ''
   if(variance){
-    variance_string <- ' variance '
+    display_type <- ' variance '
   }
   if(bright){
-    variance_string <- paste(variance_string,' bright ')
+    display_type <- ' bright '
   }
   x_count <- 10
   output <- paste('
-  <svg class="svg_item ', variance_string ,'">',sep='') #this is inside a paste function so I can define the width of the svg
+  <svg class="svg_item ', display_type ,'">',sep='') #this is inside a paste function so I can define the width of the svg
 
   for( i in seq(1,nrow(bp_info))){
     #get the most common bp
@@ -131,7 +131,7 @@ create_svg_string <- function(bp_info,front_trim,back_trim,variance,y_count,brig
       extra_class <- paste(extra_class, 'variance_high')
     }
     
-    line <- paste('<rect class="base ', extra_class ,' " x="', x_count ,'" y="', y_count ,'" width="10" height="20" stroke="black"/>\n')
+    line <- paste('<rect class="base ', extra_class ,' " x="', x_count ,'" y="10" width="10" height="20" stroke="black"/>\n')
     output <- paste(output, line)
     x_count <- x_count + 10
   }  
@@ -238,11 +238,11 @@ bp_data5 <- get_bp_info(data_small5)
 
 
 style <- get_style_string(nrow(bp_data))
-svg_item <- create_svg_string(bp_data,front_trim,back_trim,TRUE,10,TRUE)
-svg_item2 <- create_svg_string(bp_data2,front_trim,back_trim,TRUE,10,TRUE)
-svg_item3 <- create_svg_string(bp_data3,front_trim,back_trim,TRUE,10,TRUE)
-svg_item4 <- create_svg_string(bp_data4,front_trim,back_trim,TRUE,10,TRUE)
-svg_item5 <- create_svg_string(bp_data5,front_trim,back_trim,TRUE,10,TRUE)
+svg_item <- create_svg_string(bp_data,TRUE,TRUE)
+svg_item2 <- create_svg_string(bp_data2,TRUE,TRUE)
+svg_item3 <- create_svg_string(bp_data3,TRUE,TRUE)
+svg_item4 <- create_svg_string(bp_data4,TRUE,TRUE)
+svg_item5 <- create_svg_string(bp_data5,TRUE,TRUE)
 
 
 strings <- c(get_bp_string(bp_data),get_bp_string(bp_data2),get_bp_string(bp_data3),get_bp_string(bp_data4))
@@ -271,11 +271,46 @@ build_image <- function(files,image_option,color_option,front_trim,back_trim){
   #trim the data
   for(i in seq(1,length(file_infos))){
     file_infos[[i]] <- file_infos[[i]][front_trim:(nrow(file_infos[[i]]) - back_trim),]
+    #get the base paor information
+    file_infos[[i]] <- get_bp_info(file_infos[[i]])
   }
-  return(file_infos)
+  #generate image depending on the type of image requested
+  if(image_option %in% 'variance'){
+    image_strings <- c()
+    for(i in seq(1,length(file_infos))){
+      #true denotes that this will use the variance visualization
+      #the second true is for using the bright color scheme
+      image_strings <- c(image_strings,create_svg_string(file_infos[[i]],TRUE,TRUE))
+    }
+    
+  }else if(image_option %in% 'normal'){
+    
+  }else if(image_option %in% 'consensus'){
+    
+  }else{
+    #you should never get to this point
+    print("An error has occured")
+  }
+  #combind all the stings with the style string
+  style <- get_style_string(nrow(file_infos[[1]]))
+  final_string <- paste(style,image_strings)
+  
+  #wrap with html tags for viewing on its own
+  html <- htlm_wrap(final_string)
+  
+  #write the html to a file so it can be see in a browser
+  outfile<-file("output.html")
+  writeLines(html, outfile)
+  close(outfile)
+  
+  return(final_string)
 }
 
-paths <- c('final_dirs/8664_2/pileup.pileup','final_dirs/8664_3/pileup.pileup','final_dirs/8664_4/pileup.pileup')
+paths <- c('final_dirs/8664_2/pileup.pileup',
+           'final_dirs/8664_3/pileup.pileup',
+           'final_dirs/8664_4/pileup.pileup',
+           'final_dirs/8664_5/pileup.pileup',
+           'final_dirs/8664_6/pileup.pileup')
 
-thing2 <- build_image(paths,'','',600,600)
+thing2 <- build_image(paths,'variance','',600,600)
 
