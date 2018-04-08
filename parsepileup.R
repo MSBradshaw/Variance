@@ -59,17 +59,18 @@ front_trim <- 600
 back_trim <- 600
 
 #generate the sequence string with bp coloring or variance coloring
-create_conscensus_svg_string <- function(bp_info,conscensus,variance){
+create_conscensus_svg_string <- function(bp_info,conscensus,variance,name){
   extra_class <- ''
   variance_string <- ''
   if(variance){
     extra_class <- ' variance '
   }
-  x_count <- 10
+  x_count <- 80
   cons_vec <- strsplit(conscensus,'')
 
   output <- paste('
   <svg class="svg_item ', extra_class ,'">',sep='') 
+  output <- paste(output, '<text x="10" y="26" font-family="sans-serif" font-size="20px" fill="black">',name,'</text>')
   color <- c('A','C','G','T')
   
   for( i in seq(1,nrow(bp_info))){
@@ -97,11 +98,12 @@ create_conscensus_svg_string <- function(bp_info,conscensus,variance){
     output <- paste(output, line)
     x_count <- x_count + 10
   }
+  output <- paste(output,'</svg>')
   return(output)
 }  
 
 #generate the sequence string with bp coloring or variance coloring
-create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE){
+create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE,name){
   display_type <- ''
   if(variance){
     display_type <- ' variance '
@@ -109,10 +111,10 @@ create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE){
   if(bright){
     display_type <- ' bright '
   }
-  x_count <- 10
+  x_count <- 80
   output <- paste('
   <svg class="svg_item ', display_type ,'">',sep='') #this is inside a paste function so I can define the width of the svg
-
+  output <- paste(output, '<text x="10" y="26" font-family="sans-serif" font-size="20px" fill="black">',name,'</text>')
   for( i in seq(1,nrow(bp_info))){
     #get the most common bp
     index <- which.max(bp_info[i,])
@@ -222,44 +224,48 @@ get_bp_string <- function(bp_info){
   final <- paste(bases,collapse='')
   return(final)
 }
-#trim the data
-data_small <- data[front_trim:(nrow(data) - back_trim),]
-data_small2 <- data2[front_trim:(nrow(data2) - back_trim),]
-data_small3 <- data3[front_trim:(nrow(data3) - back_trim),]
-data_small4 <- data4[front_trim:(nrow(data4) - back_trim),]
-data_small5 <- data5[front_trim:(nrow(data5) - back_trim),]
 
 
-bp_data <- get_bp_info(data_small)
-bp_data2 <- get_bp_info(data_small2)
-bp_data3 <- get_bp_info(data_small3)
-bp_data4 <- get_bp_info(data_small4)
-bp_data5 <- get_bp_info(data_small5)
+build_key <- function(image_option){
+  if(image_option %in% 'variance'){
+    key <- '  <svg class="svg_item bright">
+    <rect class="base  match variance_none  " x=" 10 " y="10" width="10" height="20" stroke="black"/>
+    <text x="25" y="26" font-family="sans-serif" font-size="20px" fill="black"> No Variance </text>
+    <rect class="base  match variance_01  " x=" 150 " y="10" width="10" height="20" stroke="black"/>
+    <text x="165" y="26" font-family="sans-serif" font-size="20px" fill="black"> < 1% </text>
+    <rect class="base  match variance_10  " x=" 300 " y="10" width="10" height="20" stroke="black"/>
+    <text x="315" y="26" font-family="sans-serif" font-size="20px" fill="black"> 1% - 10% </text>
+    <rect class="base  match variance_high  " x=" 450 " y="10" width="10" height="20" stroke="black"/>
+    <text x="465" y="26" font-family="sans-serif" font-size="20px" fill="black"> + 10% </text>
+    </svg>'
+  }else if(image_option %in% 'normal'){
+    key <- '<svg class="svg_item"><rect class="base   A  " x=" 10 " y="10" width="10" height="20" stroke="black"/>
+    <text x="25" y="26" font-family="sans-serif" font-size="20px" fill="black"> A </text>
+    <rect class="base   C  " x=" 60 " y="10" width="10" height="20" stroke="black"/>
+    <text x="75" y="26" font-family="sans-serif" font-size="20px" fill="black"> C </text>
+    <rect class="base   T  " x=" 110 " y="10" width="10" height="20" stroke="black"/>
+    <text x="125" y="26" font-family="sans-serif" font-size="20px" fill="black"> G </text>
+    <rect class="base   G  " x=" 160 " y="10" width="10" height="20" stroke="black"/>
+    <text x="175" y="26" font-family="sans-serif" font-size="20px" fill="black"> T </text></svg>'
+  }else if(image_option %in% 'consensus'){
+    key <- '   <svg class="svg_item "> <rect class="base   A  " x=" 10 " y="10" width="10" height="20" stroke="black"/>
+    <text x="25" y="26" font-family="sans-serif" font-size="20px" fill="black"> A </text>
+    <rect class="base   C  " x=" 60 " y="10" width="10" height="20" stroke="black"/>
+    <text x="75" y="26" font-family="sans-serif" font-size="20px" fill="black"> C </text>
+    <rect class="base   T  " x=" 110 " y="10" width="10" height="20" stroke="black"/>
+    <text x="125" y="26" font-family="sans-serif" font-size="20px" fill="black"> G </text>
+    <rect class="base   G  " x=" 160 " y="10" width="10" height="20" stroke="black"/>
+    <text x="175" y="26" font-family="sans-serif" font-size="20px" fill="black"> T </text>
+    <rect class="base   match  " x=" 210 " y="10" width="10" height="20" stroke="black"/>
+    <text x="225" y="26" font-family="sans-serif" font-size="20px" fill="black"> Match </text></svg>'
+  }else{
+    #you should never get to this point
+    print("An error has occured")
+  }
+  return(key)
+}
 
-
-style <- get_style_string(nrow(bp_data))
-svg_item <- create_svg_string(bp_data,TRUE,TRUE)
-svg_item2 <- create_svg_string(bp_data2,TRUE,TRUE)
-svg_item3 <- create_svg_string(bp_data3,TRUE,TRUE)
-svg_item4 <- create_svg_string(bp_data4,TRUE,TRUE)
-svg_item5 <- create_svg_string(bp_data5,TRUE,TRUE)
-
-
-strings <- c(get_bp_string(bp_data),get_bp_string(bp_data2),get_bp_string(bp_data3),get_bp_string(bp_data4))
-con <- get_consensus(strings)
-
-#final_string <- create_conscensus_svg_string(bp_data,con,FALSE)
-
-final_string <- paste(style,svg_item,svg_item2,svg_item3,svg_item4,svg_item5)
-
-#final_string <- paste(style,final_string)
-html <- htlm_wrap(final_string)
-
-fileConn<-file("output.html")
-writeLines(html, fileConn)
-close(fileConn)
-
-build_image <- function(files,image_option,color_option,front_trim,back_trim){
+build_image <- function(files,image_option,color_option,front_trim,back_trim, names){
   #read in the files
   read_tsv('final_dirs/8664_2/pileup.pileup',col_names = FALSE)
   files <- as.tibble(files)
@@ -280,20 +286,35 @@ build_image <- function(files,image_option,color_option,front_trim,back_trim){
     for(i in seq(1,length(file_infos))){
       #true denotes that this will use the variance visualization
       #the second true is for using the bright color scheme
-      image_strings <- c(image_strings,create_svg_string(file_infos[[i]],TRUE,TRUE))
+      image_strings <- c(image_strings,create_svg_string(file_infos[[i]],TRUE,TRUE,names[i]))
     }
     
   }else if(image_option %in% 'normal'){
-    
+    image_strings <- c()
+    for(i in seq(1,length(file_infos))){
+      image_strings <- c(image_strings,create_svg_string(file_infos[[i]],FALSE,FALSE,names[i]))
+    }
   }else if(image_option %in% 'consensus'){
-    
+    strings <- c()
+    for(i in seq(1,length(file_infos))){
+      strings <- c(strings,get_bp_string(file_infos[[i]]))
+    }
+    con <- get_consensus(strings)
+    image_strings <- c()
+    for(i in seq(1,length(file_infos))){
+      image_strings <- c(image_strings,create_conscensus_svg_string(file_infos[[i]],con,FALSE,names[i]) )
+    }
   }else{
     #you should never get to this point
     print("An error has occured")
   }
   #combind all the stings with the style string
   style <- get_style_string(nrow(file_infos[[1]]))
-  final_string <- paste(style,image_strings)
+  key <- build_key(image_option)
+  final_string <- paste(style,key)
+  for( i in seq(1,length(image_strings))){
+    final_string <- paste(final_string,image_strings[[i]])
+  }
   
   #wrap with html tags for viewing on its own
   html <- htlm_wrap(final_string)
@@ -312,5 +333,7 @@ paths <- c('final_dirs/8664_2/pileup.pileup',
            'final_dirs/8664_5/pileup.pileup',
            'final_dirs/8664_6/pileup.pileup')
 
-thing2 <- build_image(paths,'variance','',600,600)
+names <- c('8664_2','8664_3','8664_4','8664_5','8664_6')
+
+thing2 <- build_image(paths,'variance','',600,600,names)
 
