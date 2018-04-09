@@ -335,5 +335,5 @@ paths <- c('final_dirs/8664_2/pileup.pileup',
 
 names <- c('8664_2','8664_3','8664_4','8664_5','8664_6')
 
-thing2 <- build_image(paths,'variance','',600,600,names)
+#thing2 <- build_image(paths,'variance','',600,600,names)
 
