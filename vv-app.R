@@ -28,12 +28,14 @@ server <- function(input, output) {
       return(NULL)
     }
     names <- c('8664_2','8664_3','8664_4','8664_5','8664_6')
+   # names <- c('MCM7','RPB1','RPB2')
     paths <- c('final_dirs/8664_2/pileup.pileup',
                'final_dirs/8664_3/pileup.pileup',
                'final_dirs/8664_4/pileup.pileup',
                'final_dirs/8664_5/pileup.pileup',
                'final_dirs/8664_6/pileup.pileup')
-    return( HTML( build_image( input$file1$datapath,input$image_type,'',input$front,input$end,names ) ) )
+    #input$front,input$end
+    return( HTML( build_image( input$file1$datapath,input$image_type,'',0,0,names ) ) )
     })
 }
 shinyApp(ui = ui, server = server)

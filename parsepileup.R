@@ -111,6 +111,7 @@ create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE,name){
   if(bright){
     display_type <- ' bright '
   }
+  total_variance <- 0
   x_count <- 80
   output <- paste('
   <svg class="svg_item ', display_type ,'">',sep='') #this is inside a paste function so I can define the width of the svg
@@ -120,8 +121,11 @@ create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE,name){
     index <- which.max(bp_info[i,])
     color <- c('A','C','G','T')
     variance <- 1 - (max(bp_info[i,]) / sum(bp_info[i,]))
+    if(is.na(variance)){
+      variance <- 0
+    }
     extra_class <- color[index]
-    
+    total_variance = total_variance + variance
     if(variance == 0){
       extra_class <- paste(extra_class, 'variance_none')
     }else if(variance < .01){
@@ -139,6 +143,8 @@ create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE,name){
   }  
 
   output <- paste(output, '</svg>')
+  print(paste(name,'\t',(total_variance / nrow(bp_info))))
+  
   return(output)
 }
 
