@@ -9,22 +9,7 @@ library(stringr)
 #Cytosine	6	RED
 #Guanine	6	GREEN
 
-#pileup <- readPileup('8802/pileup.pileup')
-
 setwd('C:/Users/Michael/Documents/Variance')
-
-data <- read_tsv('final_dirs/8664_2/pileup.pileup',col_names = FALSE)
-data2 <- read_tsv('final_dirs/8664_3/pileup.pileup',col_names = FALSE)
-data3 <- read_tsv('final_dirs/8664_4/pileup.pileup',col_names = FALSE)
-data4 <- read_tsv('final_dirs/8664_5/pileup.pileup',col_names = FALSE)
-data5 <- read_tsv('final_dirs/8664_6/pileup.pileup',col_names = FALSE)
-
-colnames(data) <- c('name','position','bp','depth','info','quality')
-colnames(data2) <- c('name','position','bp','depth','info','quality')
-colnames(data3) <- c('name','position','bp','depth','info','quality')
-colnames(data4) <- c('name','position','bp','depth','info','quality')
-colnames(data5) <- c('name','position','bp','depth','info','quality')
-
 
 #return a matrix of the bp
 get_bp_info <- function(data){
@@ -65,7 +50,7 @@ create_conscensus_svg_string <- function(bp_info,conscensus,variance,name){
   if(variance){
     extra_class <- ' variance '
   }
-  x_count <- 80
+  x_count <- 120
   cons_vec <- strsplit(conscensus,'')
 
   output <- paste('
@@ -112,7 +97,7 @@ create_svg_string <- function(bp_info,variance=TRUE,bright=FALSE,name){
     display_type <- ' bright '
   }
   total_variance <- 0
-  x_count <- 80
+  x_count <- 120
   output <- paste('
   <svg class="svg_item ', display_type ,'">',sep='') #this is inside a paste function so I can define the width of the svg
   output <- paste(output, '<text x="10" y="26" font-family="sans-serif" font-size="20px" fill="black">',name,'</text>')
@@ -264,6 +249,27 @@ build_key <- function(image_option){
     <text x="175" y="26" font-family="sans-serif" font-size="20px" fill="black"> T </text>
     <rect class="base   match  " x=" 210 " y="10" width="10" height="20" stroke="black"/>
     <text x="225" y="26" font-family="sans-serif" font-size="20px" fill="black"> Match </text></svg>'
+  }else if(image_option %in% 'hybrid'){
+    key <- '   <svg class="svg_item "> <rect class="base   A  " x=" 10 " y="10" width="10" height="20" stroke="black"/>
+    <text x="25" y="26" font-family="sans-serif" font-size="20px" fill="black"> A </text>
+    <rect class="base   C  " x=" 60 " y="10" width="10" height="20" stroke="black"/>
+    <text x="75" y="26" font-family="sans-serif" font-size="20px" fill="black"> C </text>
+    <rect class="base   T  " x=" 110 " y="10" width="10" height="20" stroke="black"/>
+    <text x="125" y="26" font-family="sans-serif" font-size="20px" fill="black"> G </text>
+    <rect class="base   G  " x=" 160 " y="10" width="10" height="20" stroke="black"/>
+    <text x="175" y="26" font-family="sans-serif" font-size="20px" fill="black"> T </text>
+    <rect class="base   match  " x=" 210 " y="10" width="10" height="20" stroke="black"/>
+    <text x="225" y="26" font-family="sans-serif" font-size="20px" fill="black"> Match </text></svg>
+    <svg class="svg_item bright">
+    <rect class="base  match variance_none  " x=" 10 " y="10" width="10" height="20" stroke="black"/>
+    <text x="25" y="26" font-family="sans-serif" font-size="20px" fill="black"> No Variance </text>
+    <rect class="base  match variance_01  " x=" 150 " y="10" width="10" height="20" stroke="black"/>
+    <text x="165" y="26" font-family="sans-serif" font-size="20px" fill="black"> < 1% </text>
+    <rect class="base  match variance_10  " x=" 300 " y="10" width="10" height="20" stroke="black"/>
+    <text x="315" y="26" font-family="sans-serif" font-size="20px" fill="black"> 1% - 10% </text>
+    <rect class="base  match variance_high  " x=" 450 " y="10" width="10" height="20" stroke="black"/>
+    <text x="465" y="26" font-family="sans-serif" font-size="20px" fill="black"> + 10% </text>
+    </svg>'
   }else{
     #you should never get to this point
     print("An error has occured")
@@ -309,6 +315,18 @@ build_image <- function(files,image_option,color_option,front_trim,back_trim, na
     image_strings <- c()
     for(i in seq(1,length(file_infos))){
       image_strings <- c(image_strings,create_conscensus_svg_string(file_infos[[i]],con,FALSE,names[i]) )
+    }
+  }else if(image_option %in% 'hybrid'){
+    #this one is suppose to builds an image
+    strings <- c()
+    for(i in seq(1,length(file_infos))){
+      strings <- c(strings,get_bp_string(file_infos[[i]]))
+    }
+    con <- get_consensus(strings)
+    image_strings <- c()
+    for(i in seq(1,length(file_infos))){
+      image_strings <- c(image_strings,create_conscensus_svg_string(file_infos[[i]],con,FALSE,names[i]) )
+      image_strings <- c(image_strings,create_svg_string(file_infos[[i]],TRUE,TRUE,names[i]))
     }
   }else{
     #you should never get to this point
