@@ -67,7 +67,9 @@ create_conscensus_svg_string <- function(bp_info,conscensus,variance,name){
     }
     
     variance <- 1 - (max(as.numeric(bp_info[i,])) / sum(as.numeric(bp_info[i,])))
-    
+    if( is.na(variance) ){
+      variance <- 0
+    }
     if(variance == 0){
       class <- paste(class, 'variance_none')
     }else if(variance < .01){
@@ -283,7 +285,11 @@ build_image <- function(files,image_option,color_option,front_trim,back_trim, na
   files <- as.tibble(files)
   file_infos <- apply(files,1,function(path){
     data <- read_tsv(path,col_names = FALSE)
-    colnames(data) <- c('name','position','bp','depth','info','quality')
+    if(length(colnames(data)) != 6){
+      colnames(data) <- c('name','position','bp','depth','info')
+    }else{
+      colnames(data) <- c('name','position','bp','depth','info','quality') 
+    }
     return(data)
   })
   #trim the data
